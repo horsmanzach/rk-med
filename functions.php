@@ -6,6 +6,65 @@ function divi__child_theme_enqueue_styles() {
 add_action( 'wp_enqueue_scripts', 'divi__child_theme_enqueue_styles' );
 
 /*================================================
+# Enqueue GSAP and Story Slider Scripts
+================================================*/
+function enqueue_story_slider_assets() {
+    // Only load on story post type single pages
+    if (is_singular('story')) {
+        // Enqueue GSAP from CDN
+        wp_enqueue_script(
+            'gsap',
+            'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js',
+            array(),
+            '3.12.2',
+            true
+        );
+        
+        // Enqueue our custom story slider script
+        wp_enqueue_script(
+            'story-slider',
+            get_stylesheet_directory_uri() . '/js/story-slider.js',
+            array('gsap'),
+            '1.0.0',
+            true
+        );
+    }
+}
+add_action('wp_enqueue_scripts', 'enqueue_story_slider_assets');
+
+
+/*================================================
+# Pass ACF Field Data to JavaScript
+================================================*/
+function add_story_slider_data() {
+    // Only run on story post type single pages
+    if (!is_singular('story')) {
+        return;
+    }
+    
+    // Get ACF field values and check if they're populated
+    $slide_two = get_field('slide_two');
+    $slide_three = get_field('slide_three');
+    $slide_four = get_field('slide_four');
+    
+    // Create data array to pass to JavaScript
+    $slider_data = array(
+        'slide_two_populated' => !empty($slide_two),
+        'slide_three_populated' => !empty($slide_three),
+        'slide_four_populated' => !empty($slide_four)
+    );
+    
+    // Output the data as a JavaScript variable
+    ?>
+    <script type="text/javascript">
+        window.storySliderData = <?php echo json_encode($slider_data); ?>;
+    </script>
+    <?php
+}
+add_action('wp_head', 'add_story_slider_data');
+
+
+/*================================================
 #Load custom Blog Module
 ================================================*/
 function divi_custom_blog_module() {
@@ -229,25 +288,3 @@ function register_my_menu() {
 }
 add_action( 'init', 'register_my_menu' );
 
-add_action('wp_head' , 'conversion_tracking');
-function conversion_tracking(){
-	?>
-	<!-- Global site tag (gtag.js) - Google Ads: 716856343 -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=AW-716856343"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'AW-716856343');
-</script>
-<?
-	if(is_page( 936 )){
-?>
-<!-- Event snippet for New Thank you page conversion page -->
-<script>
-  gtag('event', 'conversion', {'send_to': 'AW-716856343/UpKmCMTC0rgBEJe46dUC'});
-</script>
-<?
-	}
-}
